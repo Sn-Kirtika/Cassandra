@@ -1,0 +1,97 @@
+name: cassandra-cluster # Nom du projet pour l'ensemble des services
+
+networks:
+  cassandra-net:
+    driver: bridge
+
+services: # Liste des services à déclarer
+  cassandra-1: # Nom du service 1
+    image: "cassandra:latest" # cassandra:5.0.3
+    container_name: "cassandra-1" # Nom du container
+    ports:
+      - 7000:7000
+      - 7001:7001
+      - 7199:7199
+      - 9042:9042 # Nous devons avoir des ports différents pour chaque instance côté PC
+      - 9160:9160
+    networks:
+      - cassandra-net # Nom du réseau que l'on va connecter (définit plus haut)
+    environment: # Variables d'environnement pour le conainer
+      - CASSANDRA_START_RPC=true # default
+      - CASSANDRA_RPC_ADDRESS=0.0.0.0 # default
+      - CASSANDRA_LISTEN_ADDRESS=auto # default, use IP addr of container # = CASSANDRA_BROADCAST_ADDRESS
+      - CASSANDRA_CLUSTER_NAME=my-cluster
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_DC=my-datacenter-1
+    volumes:
+      - cassandra-node-1:/var/lib/cassandra:rw
+      - ./DBLP.tar.gz:/DBLP.tar.gz
+
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "nodetool status"]
+      interval: 2m
+      start_period: 2m
+      timeout: 10s
+      retries: 3
+
+  cassandra-2:
+    image: "cassandra:latest" # cassandra:5.0.3
+    container_name: "cassandra-2"
+    ports:
+      - 9043:9042 # Nous devons avoir des ports différents pour chaque instance côté PC
+    networks:
+      - cassandra-net
+    environment:
+      - CASSANDRA_START_RPC=true # default
+      - CASSANDRA_RPC_ADDRESS=0.0.0.0 # default
+      - CASSANDRA_LISTEN_ADDRESS=auto # default, use IP addr of container # = CASSANDRA_BROADCAST_ADDRESS
+      - CASSANDRA_CLUSTER_NAME=my-cluster
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_DC=my-datacenter-1
+      - CASSANDRA_SEEDS=cassandra-1
+    depends_on:
+      cassandra-1:
+        condition: service_healthy
+    volumes:
+      - cassandra-node-2:/var/lib/cassandra:rw
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "nodetool status"]
+      interval: 2m
+      start_period: 2m
+      timeout: 10s
+      retries: 3
+
+  cassandra-3:
+    image: "cassandra:latest" # cassandra:5.0.3
+    container_name: "cassandra-3"
+    ports:
+      - 9044:9042 # Nous devons avoir des ports différents pour chaque instance côté PC
+    networks:
+      - cassandra-net
+    environment:
+      - CASSANDRA_START_RPC=true # default
+      - CASSANDRA_RPC_ADDRESS=0.0.0.0 # default
+      - CASSANDRA_LISTEN_ADDRESS=auto # default, use IP addr of container # = CASSANDRA_BROADCAST_ADDRESS
+      - CASSANDRA_CLUSTER_NAME=my-cluster
+      - CASSANDRA_ENDPOINT_SNITCH=GossipingPropertyFileSnitch
+      - CASSANDRA_DC=my-datacenter-1
+      - CASSANDRA_SEEDS=cassandra-1
+    depends_on:
+      cassandra-2:
+        condition: service_healthy
+    volumes:
+      - cassandra-node-3:/var/lib/cassandra:rw
+    restart: on-failure
+    healthcheck:
+      test: ["CMD-SHELL", "nodetool status"]
+      interval: 2m
+      start_period: 2m
+      timeout: 10s
+      retries: 3
+
+volumes:
+  cassandra-node-1:
+  cassandra-node-2:
+  cassandra-node-3:
