@@ -207,3 +207,13 @@ cqlsh:esgi_cassandra> ALTER TABLE authors_pos WITH GC_GRACE_SECONDS = 0;
 Partie 3
 
 15 -  
+
+
+
+INSERT INTO publicationsNorm JSON sql
+'{"id":"series/cogtech/BrandhermSNL13", "type":"Article", "year":2013,
+ "title":"A SemProM Use Case: Health Care and Compliance.",
+ "authors":["Boris Brandherm","Michael Schmitz","Robert Ne?elrath","Frank Lehmann"],
+ "pages":{"start":349, "end":361}, "booktitle":"SemProM",
+ "journal":{"series":"", "editor":"", "volume":0, "isbn":[ "" ]},
+ "url":"db/series/cogtech/364237376.html#BrandhermSNL13", "cites":[ "" ]}';
