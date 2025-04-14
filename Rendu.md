@@ -206,14 +206,100 @@ cqlsh:esgi_cassandra> ALTER TABLE authors_pos WITH GC_GRACE_SECONDS = 0;
 
 Partie 3
 
-15 -  
+15 -  SELECT author FROM authors_publis where title = 'Medical imaging archiving: A comparison between several NoSQL solutions.';
+
+ author
+-----------------------
+          Carlos Costa
+          Louis Beroud
+ Luis A. Bastiao Silva
+    Jos? Lu?s Oliveira
 
 
 
-INSERT INTO publicationsNorm JSON sql
-'{"id":"series/cogtech/BrandhermSNL13", "type":"Article", "year":2013,
- "title":"A SemProM Use Case: Health Care and Compliance.",
- "authors":["Boris Brandherm","Michael Schmitz","Robert Ne?elrath","Frank Lehmann"],
- "pages":{"start":349, "end":361}, "booktitle":"SemProM",
- "journal":{"series":"", "editor":"", "volume":0, "isbn":[ "" ]},
- "url":"db/series/cogtech/364237376.html#BrandhermSNL13", "cites":[ "" ]}';
+Il n'est pas possible de faire de jointure entre les tables publications et authors sous CQL.
+
+16 -  SELECT author FROM authors_publis where title = 'Medical imaging archiving: A comparison between several NoSQL solutions.';
+
+ author
+-----------------------
+          Carlos Costa
+          Louis Beroud
+ Luis A. Bastiao Silva
+    Jos? Lu?s Oliveira
+
+
+
+
+17 - cqlsh:esgi_cassandra> SELECT pos, title FROM authors_publis WHERE author = 'Oscar Castillo' LIMIT 5;
+
+ pos | title
+-----+------------------------------------------------------------------------------------------------------------------------------------------
+   0 |                                                                                   Type-2 Fuzzy Logic in Intelligent Control Applications
+   0 |                                                                                              Type-2 Fuzzy Logic: Theory and Applications
+   1 | Hybrid Intelligent Systems for Pattern Recognition Using Soft Computing - An Evolutionary Approach for Neural Networks and Fuzzy Systems
+   1 |                    Optimization of Membership Functions for Type-1 and Type 2 Fuzzy Controllers of an Autonomous Mobile Robot Using PSO.
+   3 |                                                                                              Type-2 Fuzzy Grammar in Language Evolution.
+
+(5 rows)
+
+
+18 - Il n'est pas possible d'avoir la liste des auteurs ayant publié avec Oscar Castillo cà partir des tables authors ou authors_publis car il n'est pas possible de faire des jointure sous CQL.
+
+
+19 - cqlsh:esgi_cassandra> CREATE TYPE journal_type (series TEXT, editor TEXT, volume INT, isbn LIST<TEXT>);
+
+cqlsh:esgi_cassandra> CREATE TABLE publicationsNorm (id TEXT, type TEXT, year INT, title TEXT, authors LIST<TEXT>, pages MAP<TEXT,INT>, booktitle TEXT, journal FROZEN<journal_type>, url TEXT, cites LIST<TEXT>, PRIMARY KEY (id));
+
+20 - INSERT INTO publicationsNorm JSON '{"id":"series/cogtech/BrandhermSNL13", "type":"Article", "year":2013, "title":"A SemProM Use Case: Health Care and Compliance.", "authors":["Boris Brandherm","Michael Schmitz","Robert Ne?elrath","Frank Lehmann"], "pages":{"start":349, "end":361}, "booktitle":"SemProM", "journal":{"series":"", "editor":"", "volume":0, "isbn":[ "" ]}, "url":"db/series/cogtech/364237376.html#BrandhermSNL13", "cites":[ "" ]}';
+
+SOURCE 'DBLP.json';
+
+
+21 - cqlsh:esgi_cassandra> CREATE INDEX btree_publicationsNorm_title on publicationsNorm(title);
+
+
+22 - cqlsh:esgi_cassandra> SELECT authors FROM publicationsNorm WHERE title = 'Data Quality';
+
+ authors
+-----------------------------------------------------
+ ['Richard Y. Wang', 'Mostapha Ziad', 'Yang W. Lee']
+
+
+23 - cqlsh:esgi_cassandra> SELECT journal.series FROM publicationsNorm WHERE title = 'Data Quality';
+
+ journal.series
+------------------------------
+ Advances in Database Systems
+
+24 - cqlsh:esgi_cassandra> SELECT pages['end'] FROM publicationsNorm WHERE title = 'Data Quality';
+
+ pages['end']
+--------------
+          147
+
+25 . Il n'est pas possible d'accéder directement à un élément précis d'une liste avec une requête sur Cassandra. Nous pouvons toutefois extraire la liste des auteurs puis identifier le premier à l'aide d'un script externe.
+
+
+26 - cqlsh:esgi_cassandra> SELECT title FROM publicationsNorm WHERE authors CONTAINS 'Oscar Castillo' LIMIT 5 ALLOW FILTERING;
+
+ title
+---------------------------------------------------------------------------------------------
+                             Soft Computing and Fractal Theory for Intelligent Manufacturing
+ Hierarchical Genetic Optimization of the Fuzzy Integrator for Navigation of a Mobile Robot.
+                      Handling of Synergy into an Algorithm for Project Portfolio Selection.
+                                Design of Fuzzy Control Systems with Different PSO Variants.
+            Designing Systematic Stable Fuzzy Logic Controllers by Fuzzy Lyapunov Synthesis.
+
+27 - cqlsh:esgi_cassandra> SELECT title, pages['start'] FROM publicationsNorm WHERE pages['end'] = 99 LIMIT 5 ALLOW FILTERING;
+
+ title                                                                                                                  | pages['start']
+------------------------------------------------------------------------------------------------------------------------+----------------
+                                  Building a Schistosomiasis Process Ontology for an Epidemiological Monitoring System. |             75
+                                                                         Paid Search: Modeling Rank Dependent Behavior. |             93
+                       Hand-Held Mobile Augmented Reality for Collaborative Problem Solving: A Case Study with Sorting. |             91
+ AMCTD: Adaptive Mobility of Courier Nodes in Threshold-Optimized DBR Protocol for Underwater Wireless Sensor Networks. |             93
+                                                                            Universal Enterprise Adaptive Object Model. |             89
+
+
+28 . Il n'est pas possible de filtrer directement sur un champs personnalisé avec un WHERE dans une requête sur Cassandra. Nous pouvons toutefois extraire la liste des série de journal avec leur titre et filtrer sur le champs series afin d'identifier ceux correspondant à 'Advances in Database Systems' à l'aide d'un script externe.
