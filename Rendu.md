@@ -100,7 +100,74 @@ Partie 2
               Hossein Fotouhi |     1
                 Mohamed Wahbi |     1
 
-13 - A REVOIR
+13 - cqlsh:esgi_cassandra> CREATE TABLE authors_pos (art_id TEXT, author TEXT, pos INT, PRIMARY KEY ((pos), art_id));
+
+cqlsh:esgi_cassandra> CREATE INDEX btree_authors_pos_art_id on authors_pos(art_id);
+cqlsh:esgi_cassandra> CREATE INDEX btree_authors_pos_author on authors_pos(author);
+cqlsh:esgi_cassandra> COPY authors_pos(art_id,author,pos) FROM 'authors.csv' WITH HEADER = true AND DELIMITER=';';
+
+ELECT pos, COUNT(*) FROM authors_pos GROUP BY pos;
+
+ pos | count
+-----+-------
+  23 |     6
+  33 |     2
+   5 |   981
+  28 |     4
+  42 |     1
+  10 |    95
+  16 |    22
+  13 |    46
+  30 |     3
+  11 |    74
+   1 | 13633
+  19 |    10
+  46 |     1
+  43 |     1
+   8 |   183
+   0 | 19011
+   2 |  8810
+  45 |     1
+   4 |  2079
+  18 |    16
+  44 |     1
+  15 |    29
+  22 |     8
+  27 |     4
+  20 |     9
+   7 |   302
+  36 |     1
+  40 |     1
+  38 |     1
+  39 |     1
+   6 |   519
+  29 |     4
+  37 |     1
+   9 |   122
+  14 |    36
+  26 |     5
+  21 |     9
+  17 |    19
+  35 |     2
+  31 |     3
+  24 |     6
+  32 |     2
+  41 |     1
+  25 |     5
+  34 |     2
+  12 |    56
+   3 |  4462
+
+
+
+
+
+cqlsh:esgi_cassandra> ALTER TABLE authors_pos WITH GC_GRACE_SECONDS = 0;
+
+
+
+
+
 
 
 14 - cqlsh:esgi_cassandra> SELECT pos FROM authors_publis where author = 'Oscar Castillo';
@@ -137,3 +204,6 @@ Partie 2
 
 
 
+Partie 3
+
+15 -  
